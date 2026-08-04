@@ -86,7 +86,10 @@ export async function POST(req: NextRequest) {
         systemInstruction: SYSTEM_PROMPT,
         responseMimeType: "application/json",
         responseSchema: RESPONSE_SCHEMA,
-        maxOutputTokens: 1000,
+        // Gemini 3.5's hidden "thinking" tokens count against maxOutputTokens.
+        // 1000 was tuned for Anthropic's non-thinking token accounting and
+        // truncated real responses mid-JSON once thinking overhead was included.
+        maxOutputTokens: 3072,
       },
     });
 
@@ -140,7 +143,8 @@ export async function POST(req: NextRequest) {
       if (top && product) {
         crossSell = { category: product.category, match: top };
       }
-    } catch {
+    } catch (err) {
+      console.error("Cross-sell ranking failed:", err);
       crossSell = null;
     }
   }
