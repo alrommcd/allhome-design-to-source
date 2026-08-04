@@ -12,14 +12,28 @@ the cross-sell catch block (no logging on error). Re-verified after both fixes: 
 cross-sell both return complete, valid, image-grounded results. Typecheck/lint/build all still pass.
 
 Four real template renders (elevation.png, livingroom.png, reception.png, washroom.png) are live in
-/public/templates — no placeholder templates remain. Catalog has all 24 real seed products across the 4
-categories; every product image is still `PLACEHOLDER` / `imageVerified: false` pending Om opening each
-brand source page and confirming a real photo.
+/public/templates — no placeholder templates remain. Catalog has all 22 real seed products across the 4
+categories (6 lighting, 6 facades, 6 hardware, 4 surfaces — corrected from an earlier miscount of "24" in
+this file, PROGRESS.md, and prior commit messages; the array itself was always right, only the prose
+describing it was wrong).
+
+2026-08-05, later same session: ran the automated image-search pass ("[Brand] [Product Line] India" via
+4 parallel research agents) across all 22 products and populated `imageUrl` for 20 of them — 2 came back
+with no confident candidate (`ledlum-customised-indoor`, `ledlum-smart-lighting`). `imageVerified` stays
+`false` on all 22; nothing is confirmed until a human clicks through it. Research notes (including several
+real brand-naming mismatches, e.g. Ledlum's actual fan line is "Volaris" not "Klewe") live in
+`lib/reviewNotes.ts`, keyed by product id, imported only by the new review tool. Built a dev-only
+`/review` page (`app/review/page.tsx` + `components/dev/ReviewGrid.tsx`) plus
+`app/api/dev/verify-image` (POST `{id, verified}`, writes `imageVerified` directly into `lib/catalog.ts`
+on disk, blocked in production) so Om can click through all 22 and confirm or reject each candidate.
+Switched `ProductImage.tsx` off `next/image` to a plain `<img>` in the process, since candidate images
+come from arbitrary brand domains next/image would otherwise refuse to render without an explicit
+`remotePatterns` allowlist entry per host.
 
 Next up:
-- Human-verify product images per the leads listed at the top of `lib/catalog.ts`, flip `imageVerified`
-  to `true` and swap in real `imageUrl`s as they're confirmed, starting with whatever brands appear in
-  the four templates already in place.
+- Om reviews all 22 candidates at `/review` (dev server only) and clicks Correct/Wrong on each.
+- The 2 products with no candidate (`ledlum-customised-indoor`, `ledlum-smart-lighting`) still need a
+  manually-sourced image — the automated search found nothing on Ledlum's site to match either.
 - Spot-check Analyze against the other 3 templates (elevation, reception, washroom) and the other 3
   categories — only lighting on livingroom.png has been live-tested so far.
 - Verify `gemini-3.5-flash` still holds by the time this ships — Google renames these often.
@@ -29,7 +43,10 @@ Next up:
 
 Known issues / deferred:
 - No product images are verified yet — every result card currently renders the "Image pending
-  verification" placeholder state by design.
+  verification" placeholder state by design, regardless of whether `imageUrl` now holds a candidate.
+- Several candidate images found tonight are flagged in `lib/reviewNotes.ts` as naming mismatches or weak
+  matches (e.g. Colour Coats "Seamless Flooring" candidate actually shows the finish on a wall, not a
+  floor) — worth reading the note before clicking Correct, not just eyeballing the photo.
 - Cross-sell suggestion (`crossSell` in the API response) issues one extra Gemini call across all
   unselected categories combined and takes its top-ranked pick — not explicitly speced in exact mechanism,
   built as the simplest implementation that satisfies "at most one cross-sell suggestion." One live test
