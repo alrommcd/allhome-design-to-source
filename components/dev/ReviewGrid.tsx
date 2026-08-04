@@ -82,7 +82,7 @@ export default function ReviewGrid({ products, notes }: ReviewGridProps) {
 
               <p style={{ fontSize: 11, color: "#666", margin: "4px 0" }}>
                 imageVerified: {String(product.imageVerified)}
-                {status && ` — you marked this ${status} this session`}
+                {status && ` (you marked this ${status} this session)`}
               </p>
 
               <div style={{ display: "flex", gap: 8 }}>

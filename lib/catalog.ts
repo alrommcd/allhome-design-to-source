@@ -194,7 +194,7 @@ export const catalog: Product[] = [
     id: "fiamarc-concealed-door-hardware",
     brand: "Fiamarc",
     category: "hardware",
-    productLine: "Concealed Door Hardware — DND/HAWA systems",
+    productLine: "Concealed Door Hardware: DND/HAWA systems",
     description:
       "Hidden hinge and door-closing mechanisms that leave no visible hardware on the door face, built for flush, seamless door details in pared-back interiors.",
     styleTags: ["minimalist", "modern"],
@@ -280,7 +280,7 @@ export const catalog: Product[] = [
     id: "cc-wall-textures-venetian",
     brand: "Colour Coats",
     category: "surfaces",
-    productLine: "Wall Textures — Venetian-style finishes",
+    productLine: "Wall Textures: Venetian-style finishes",
     description:
       "Hand-applied plaster finishes with a soft, marbled sheen, built up in layers for depth rather than a flat painted coat. Suited to rooms leaning into handcrafted, earthy, lived-in texture.",
     styleTags: ["bohemian", "earthy"],

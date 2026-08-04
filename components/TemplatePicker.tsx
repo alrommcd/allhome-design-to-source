@@ -10,7 +10,7 @@ interface TemplatePickerProps {
 export default function TemplatePicker({ templates, selectedId, onSelect }: TemplatePickerProps) {
   return (
     <div>
-      <p className="mb-3 font-mono text-xs uppercase tracking-widest text-stone">01 — Select a template room</p>
+      <p className="mb-3 font-mono text-xs uppercase tracking-widest text-stone">01. Select a template room</p>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {templates.map((template) => {
           const selected = template.id === selectedId;

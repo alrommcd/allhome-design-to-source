@@ -68,7 +68,7 @@ export default function ResultsPanel({ results, crossSell, selectedProducts, onS
             className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-stone hover:text-brass"
           >
             <span>{crossSellOpen ? "▾" : "▸"}</span>
-            Also detected in this image — {CATEGORY_LABELS[crossSell.category]}
+            Also detected in this image: {CATEGORY_LABELS[crossSell.category]}
           </button>
 
           {crossSellOpen && (

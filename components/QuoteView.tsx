@@ -22,7 +22,7 @@ export default function QuoteView({ products, onBack }: QuoteViewProps) {
 
       <div className="corner-brackets mb-6 border border-brass/50 bg-brass/10 p-4">
         <p className="font-mono text-xs uppercase tracking-wider text-brass">
-          Sample estimate for demonstration — actual pricing provided by the AllHome team.
+          Sample estimate for demonstration. Actual pricing provided by the AllHome team.
         </p>
       </div>
 
@@ -66,10 +66,10 @@ export default function QuoteView({ products, onBack }: QuoteViewProps) {
         onClick={() => setRequested(true)}
         className="w-full border border-brass bg-brass py-3 font-mono text-sm uppercase tracking-widest text-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-30"
       >
-        {requested ? "Request received — the AllHome team will follow up" : "Request Formal Quote"}
+        {requested ? "Request received. The AllHome team will follow up" : "Request Formal Quote"}
       </button>
       <p className="mt-2 text-center font-mono text-[10px] uppercase tracking-wider text-stone/60">
-        Demonstration only — no request is actually sent
+        Demonstration only. No request is actually sent
       </p>
     </div>
   );

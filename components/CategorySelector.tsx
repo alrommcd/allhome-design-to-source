@@ -10,7 +10,7 @@ interface CategorySelectorProps {
 export default function CategorySelector({ selected, onToggle }: CategorySelectorProps) {
   return (
     <div>
-      <p className="mb-3 font-mono text-xs uppercase tracking-widest text-stone">02 — Choose product categories</p>
+      <p className="mb-3 font-mono text-xs uppercase tracking-widest text-stone">02. Choose product categories</p>
       <div className="flex flex-wrap gap-2">
         {ALL_CATEGORIES.map((category) => {
           const active = selected.has(category);

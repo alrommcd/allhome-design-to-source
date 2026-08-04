@@ -24,7 +24,7 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AllHome — Design-to-Source",
+  title: "AllHome: Design-to-Source",
   description: "Match a room's design language to real AllHome product SKUs.",
 };
 
