@@ -1,9 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, ApiError } from "@google/genai";
 import { catalog, getCatalogByCategory, getProductById } from "@/lib/catalog";
 import type { Category, MatchResult } from "@/lib/types";
 
 const CATEGORIES: Category[] = ["lighting", "facades", "hardware", "surfaces"];
+
+const MAX_RETRIES = 2;
+
+// Gemini reports transient overload as HTTP 503 with status "UNAVAILABLE" - safe to
+// retry as-is. Anything else (400s, schema errors, auth errors) is a real bug and
+// should surface immediately instead of being retried and masked.
+function isRetryableGeminiError(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 503;
+}
+
+async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (!isRetryableGeminiError(err) || attempt >= MAX_RETRIES) throw err;
+      const delayMs = 1000 * 2 ** attempt; // 1s, then 2s
+      console.error(`Gemini 503 UNAVAILABLE, retrying in ${delayMs}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+}
 
 const SYSTEM_PROMPT = `You are a design-sourcing assistant for an architecture and interiors studio.
 You will be shown a room/facade image and a JSON list of candidate products from one product category.
@@ -71,27 +93,29 @@ export async function POST(req: NextRequest) {
     label: string,
     candidates: { id: string; brand: string; productLine: string; description: string; styleTags: string[] }[],
   ): Promise<MatchResult[]> {
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { inlineData: { mimeType: imageMimeType, data: imageBase64 } },
-            { text: `Category: ${label}\nCandidate products (JSON):\n${JSON.stringify(candidates)}` },
-          ],
+    const response = await withRetry(() =>
+      ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { inlineData: { mimeType: imageMimeType, data: imageBase64 } },
+              { text: `Category: ${label}\nCandidate products (JSON):\n${JSON.stringify(candidates)}` },
+            ],
+          },
+        ],
+        config: {
+          systemInstruction: SYSTEM_PROMPT,
+          responseMimeType: "application/json",
+          responseSchema: RESPONSE_SCHEMA,
+          // Gemini 3.5's hidden "thinking" tokens count against maxOutputTokens.
+          // 1000 was tuned for Anthropic's non-thinking token accounting and
+          // truncated real responses mid-JSON once thinking overhead was included.
+          maxOutputTokens: 3072,
         },
-      ],
-      config: {
-        systemInstruction: SYSTEM_PROMPT,
-        responseMimeType: "application/json",
-        responseSchema: RESPONSE_SCHEMA,
-        // Gemini 3.5's hidden "thinking" tokens count against maxOutputTokens.
-        // 1000 was tuned for Anthropic's non-thinking token accounting and
-        // truncated real responses mid-JSON once thinking overhead was included.
-        maxOutputTokens: 3072,
-      },
-    });
+      }),
+    );
 
     const raw = response.text;
     if (!raw) throw new Error("Empty response from model.");
