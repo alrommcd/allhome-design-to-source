@@ -1,11 +1,15 @@
 # Progress: AllHome Design-to-Source Agent
 
-Current state: routing restructured, 2026-08-05 (later same day). Root `/` is now a real landing page
-(hero built from `public/landingpage.png`, real headline, working `Link` navigation to `/source`). The
-entire tool flow (template picker through quotation) moved to `/source`, carrying a new persistent
-`ToolHeader` (logo, links back to `/`) on every screen of that flow. Route map, verification detail, and
-a real asset problem found and fixed (landingpage.png has marketing copy baked into the photo itself) are
-in DECISIONS.md. Typecheck, lint, and build all pass; full navigation flow live-tested in a real browser.
+Current state: landing page corrected, 2026-08-05 (later same day). `/` now renders `public/landingpage.png`
+completely unmodified - no overlay heading, subtext, or button - with an invisible `Link` positioned
+precisely over the baked-in "EXPLORE NOW" pill (coordinates measured via pixel color analysis of the
+source file, position recomputed at runtime against the actual object-cover crop so it stays correct at
+any viewport size). Tool header logo enlarged substantially (h-12/h-16, was h-7/h-8). Removed the subtitle
+line under "Design-to-Source". Added a small note under the loading spinner on `/source` about free-tier
+Gemini quota timing. See DECISIONS.md for exact measurements and verification detail.
+
+Prior state (still current): `/` is a real landing page, entire tool flow lives at `/source` with a
+persistent `ToolHeader` (logo, links back to `/`) on every screen of that flow.
 
 Prior state (still current): full visual redesign - warm ivory/gold palette, Fraunces display serif, pill
 buttons, sourced directly from `public/logo.png` and `public/landingpage.png` as brand references, applied

@@ -110,10 +110,6 @@ export default function SourcePage() {
 
       <div className="border-b border-paper-line px-6 py-6 md:px-10">
         <h1 className="font-display text-2xl font-medium text-charcoal md:text-3xl">Design-to-Source</h1>
-        <p className="mt-3 max-w-2xl text-sm text-muted">
-          Select a template room, choose the product categories you need sourced, and match the room&apos;s
-          design language to real AllHome SKUs.
-        </p>
       </div>
 
       <div className="px-6 py-10 md:px-10">
@@ -130,10 +126,15 @@ export default function SourcePage() {
               {status === "loading" ? "Analyzing…" : "Analyze"}
             </button>
             {status === "loading" && (
-              <span className="flex items-center gap-2 text-xs text-muted">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-brass" />
-                Matching against catalog for {selectedCategories.size} categor{selectedCategories.size === 1 ? "y" : "ies"}…
-              </span>
+              <div className="flex flex-col gap-1">
+                <span className="flex items-center gap-2 text-xs text-muted">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-brass" />
+                  Matching against catalog for {selectedCategories.size} categor{selectedCategories.size === 1 ? "y" : "ies"}…
+                </span>
+                <span className="text-[11px] text-muted/70">
+                  Running on a free-tier Gemini API key, analysis may take a couple of minutes.
+                </span>
+              </div>
             )}
             {status === "error" && errorMessage && (
               <span className="text-xs text-signal-low">{errorMessage}</span>

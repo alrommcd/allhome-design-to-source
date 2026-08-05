@@ -7,9 +7,9 @@ import Image from "next/image";
 // only toggles between the quote screen and the source view within the tool itself.
 export default function ToolHeader() {
   return (
-    <header className="border-b border-paper-line px-6 py-4 md:px-10">
+    <header className="border-b border-paper-line px-6 py-6 md:px-10">
       <Link href="/" className="inline-flex items-center gap-2 transition-opacity hover:opacity-80">
-        <Image src="/logo.png" alt="AllHome, back to start" width={597} height={335} className="h-7 w-auto md:h-8" priority />
+        <Image src="/logo.png" alt="AllHome, back to start" width={597} height={335} className="h-12 w-auto md:h-16" priority />
       </Link>
     </header>
   );
