@@ -1,12 +1,15 @@
 # Progress: AllHome Design-to-Source Agent
 
-Current state: full visual redesign complete, 2026-08-05 (later same day). Warm ivory/gold palette,
-Fraunces display serif, pill buttons, logo integrated in the header, sourced directly from
-`public/logo.png` and `public/landingpage.png` as brand references. Applied consistently across every
-screen (homepage, results, cross-sell, quotation flow, `/review`). Functionality and data logic
-untouched, visual layer only. Typecheck, lint, and production build all pass. Live-tested end to end in
-a real browser against the real Gemini API, including a full 8-screen screenshot pass. Not yet deployed
-anywhere, local only.
+Current state: routing restructured, 2026-08-05 (later same day). Root `/` is now a real landing page
+(hero built from `public/landingpage.png`, real headline, working `Link` navigation to `/source`). The
+entire tool flow (template picker through quotation) moved to `/source`, carrying a new persistent
+`ToolHeader` (logo, links back to `/`) on every screen of that flow. Route map, verification detail, and
+a real asset problem found and fixed (landingpage.png has marketing copy baked into the photo itself) are
+in DECISIONS.md. Typecheck, lint, and build all pass; full navigation flow live-tested in a real browser.
+
+Prior state (still current): full visual redesign - warm ivory/gold palette, Fraunces display serif, pill
+buttons, sourced directly from `public/logo.png` and `public/landingpage.png` as brand references, applied
+consistently across every screen including `/review`. Functionality and data logic untouched throughout.
 
 Prior state (functional consolidation pass, still current): physical-form-only matching, three-state
 image honesty system, no pricing anywhere (quotation-request flow instead), capped 1-2 results per
