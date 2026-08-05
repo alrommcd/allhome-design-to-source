@@ -1,6 +1,20 @@
 # Progress: AllHome Design-to-Source Agent
 
-Current state: landing page corrected, 2026-08-05 (later same day). `/` now renders `public/landingpage.png`
+Current state: Analyze performance rearchitected, 2026-08-05 (later same day). Diagnosed a real 93-second
+baseline with server-side timing logs: primary category calls were already parallel (Promise.all), but
+the cross-sell call ran sequentially AFTER that batch instead of concurrently with it, adding its own
+65 seconds on top (70% of total time). Image encoding was never the bottleneck (31ms). Fixed by splitting
+`/api/analyze` into one-unit-of-work-per-request (a single category, or cross-sell), so the client now
+fires every selected category plus cross-sell as N+1 parallel fetches and renders each the moment it
+resolves (skeleton placeholders for what's still pending), instead of waiting for one combined response.
+Image is now compressed once client-side (resize to 1024px max dimension, JPEG) and that single result is
+reused across every parallel request instead of re-fetching the multi-MB PNG per call. Cross-sell no
+longer requires a click to expand - renders automatically once resolved, still visually/structurally
+separate from primary results. Could not obtain fresh post-fix live timing numbers: the shared free-tier
+Gemini quota (20/day, same project used all night) hit zero mid-verification. Full detail, including what
+was and wasn't confirmed live, in DECISIONS.md.
+
+Prior state (still current): `/` now renders `public/landingpage.png`
 completely unmodified - no overlay heading, subtext, or button - with an invisible `Link` positioned
 precisely over the baked-in "EXPLORE NOW" pill (coordinates measured via pixel color analysis of the
 source file, position recomputed at runtime against the actual object-cover crop so it stays correct at

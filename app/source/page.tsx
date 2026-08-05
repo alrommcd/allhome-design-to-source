@@ -5,7 +5,7 @@ import Image from "next/image";
 import { templates, getTemplateById } from "@/lib/templates";
 import { getProductById } from "@/lib/catalog";
 import { CATEGORY_LABELS, type Category } from "@/lib/types";
-import { fetchImageAsBase64 } from "@/lib/imageToBase64";
+import { compressImageForAnalysis } from "@/lib/imageToBase64";
 import TemplatePicker from "@/components/TemplatePicker";
 import CategorySelector from "@/components/CategorySelector";
 import ResultsPanel, { type CategoryResult, type CrossSellItem } from "@/components/ResultsPanel";
@@ -20,7 +20,10 @@ export default function SourcePage() {
   const [selectedCategories, setSelectedCategories] = useState<Set<Category>>(new Set());
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [analyzedCategories, setAnalyzedCategories] = useState<Category[]>([]);
+  const [pendingCategories, setPendingCategories] = useState<Set<Category>>(new Set());
   const [results, setResults] = useState<CategoryResult[]>([]);
+  const [crossSellPending, setCrossSellPending] = useState(false);
   const [crossSell, setCrossSell] = useState<CrossSellItem[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<Partial<Record<Category, string>>>({});
   const [view, setView] = useState<"source" | "quote">("source");
@@ -57,35 +60,94 @@ export default function SourcePage() {
       return;
     }
 
+    const categoriesArray = Array.from(selectedCategories);
+
     setStatus("loading");
     setErrorMessage(null);
+    setResults([]);
+    setCrossSell([]);
+    setAnalyzedCategories(categoriesArray);
+    setPendingCategories(new Set(categoriesArray));
+    setCrossSellPending(true);
 
+    const t0 = performance.now();
+    console.log("[client:timing] Analyze clicked, starting image prep");
+
+    let imagePayload: { data: string; mimeType: string };
     try {
-      const { data, mimeType } = await fetchImageAsBase64(selectedTemplate.imageUrl);
-
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          imageBase64: data,
-          imageMimeType: mimeType,
-          categories: Array.from(selectedCategories),
-        }),
-      });
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        throw new Error(body.error ?? `Request failed with status ${response.status}`);
-      }
-
-      const body = await response.json();
-      setResults(body.results ?? []);
-      setCrossSell(body.crossSell ?? []);
-      setStatus("done");
+      imagePayload = await compressImageForAnalysis(selectedTemplate.imageUrl);
+      console.log(
+        `[client:timing] image compress+encode done, ms=${(performance.now() - t0).toFixed(0)} base64Bytes=${imagePayload.data.length}`,
+      );
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : "Analysis failed. Try again.");
+      setErrorMessage(err instanceof Error ? err.message : "Could not prepare the image.");
       setStatus("error");
+      setPendingCategories(new Set());
+      setCrossSellPending(false);
+      return;
     }
+
+    // Fire every selected category plus cross-sell in parallel, reusing the same
+    // compressed image for all of them. Each updates state independently the
+    // moment it resolves, instead of waiting for the whole batch.
+    const categoryPromises = categoriesArray.map(async (category) => {
+      const tCat = performance.now();
+      console.log(`[client:timing] fetch category="${category}" START`);
+      try {
+        const res = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageBase64: imagePayload.data, imageMimeType: imagePayload.mimeType, category }),
+        });
+        console.log(`[client:timing] fetch category="${category}" END ms=${(performance.now() - tCat).toFixed(0)}`);
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({}));
+          throw new Error(errBody.error ?? `Request failed with status ${res.status}`);
+        }
+        const result: CategoryResult = await res.json();
+        setResults((prev) => [...prev, result]);
+      } catch (err) {
+        setResults((prev) => [
+          ...prev,
+          { category, matches: [], error: err instanceof Error ? err.message : "Analysis failed for this category." },
+        ]);
+      } finally {
+        setPendingCategories((prev) => {
+          const next = new Set(prev);
+          next.delete(category);
+          return next;
+        });
+      }
+    });
+
+    const crossSellPromise = (async () => {
+      const tCs = performance.now();
+      console.log("[client:timing] fetch cross-sell START");
+      try {
+        const res = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            imageBase64: imagePayload.data,
+            imageMimeType: imagePayload.mimeType,
+            crossSellFor: categoriesArray,
+          }),
+        });
+        console.log(`[client:timing] fetch cross-sell END ms=${(performance.now() - tCs).toFixed(0)}`);
+        if (res.ok) {
+          const resBody = await res.json();
+          setCrossSell(resBody.crossSell ?? []);
+        }
+      } catch {
+        // Cross-sell is supplementary; a network failure here shouldn't error the primary flow.
+      } finally {
+        setCrossSellPending(false);
+      }
+    })();
+
+    await Promise.allSettled([...categoryPromises, crossSellPromise]);
+    setStatus("done");
+    console.log(`[client:timing] TOTAL end-to-end ms=${(performance.now() - t0).toFixed(0)}`);
   }
 
   function selectProduct(category: Category, productId: string) {
@@ -103,6 +165,8 @@ export default function SourcePage() {
       </main>
     );
   }
+
+  const showResults = status === "done" || (status === "loading" && analyzedCategories.length > 0);
 
   return (
     <main className="min-h-screen bp-grid">
@@ -142,7 +206,7 @@ export default function SourcePage() {
           </div>
         </div>
 
-        {status === "done" && (
+        {showResults && (
           <div className="mt-14 grid grid-cols-1 gap-10 lg:grid-cols-[280px_1fr]">
             <aside className="lg:sticky lg:top-8 lg:self-start">
               <p className="mb-3 font-body text-xs uppercase tracking-[0.15em] text-muted">Template</p>
@@ -177,7 +241,10 @@ export default function SourcePage() {
 
             <div>
               <ResultsPanel
+                analyzedCategories={analyzedCategories}
+                pendingCategories={pendingCategories}
                 results={results}
+                crossSellPending={crossSellPending}
                 crossSell={crossSell}
                 selectedProducts={selectedProducts}
                 onSelectProduct={selectProduct}

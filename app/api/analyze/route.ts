@@ -4,6 +4,7 @@ import { catalog, getCatalogByCategory, getProductById } from "@/lib/catalog";
 import type { Category, MatchResult } from "@/lib/types";
 
 const CATEGORIES: Category[] = ["lighting", "facades", "hardware", "surfaces"];
+const GEMINI_MODEL = "gemini-3.5-flash";
 
 const MAX_RETRIES = 2;
 
@@ -87,13 +88,33 @@ function selectTopMatches(matches: MatchResult[]): MatchResult[] {
   return [...high, ...medium, ...low].slice(0, 2);
 }
 
+type CandidateForModel = { id: string; brand: string; productLine: string; description: string; styleTags: string[] };
+
+function toCandidates(category: Category): CandidateForModel[] {
+  return getCatalogByCategory(category).map((p) => ({
+    id: p.id,
+    brand: p.brand,
+    productLine: p.productLine,
+    description: p.description,
+    styleTags: p.styleTags,
+  }));
+}
+
+// One request does exactly one unit of work: rank a single category, OR compute the
+// cross-sell suggestion. This lets the client fire every selected category plus
+// cross-sell as separate parallel requests and render each the moment it resolves,
+// instead of one request that internally does everything and blocks on the slowest
+// piece (previously cross-sell ran sequentially after the primary batch, adding its
+// full duration on top instead of overlapping with it).
 interface AnalyzeRequestBody {
   imageBase64: string;
   imageMimeType: string;
-  categories: Category[];
+  category?: Category;
+  crossSellFor?: Category[];
 }
 
 export async function POST(req: NextRequest) {
+  const requestStart = Date.now();
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
@@ -109,26 +130,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Request body must be JSON." }, { status: 400 });
   }
 
-  const { imageBase64, imageMimeType, categories } = body;
+  const { imageBase64, imageMimeType, category, crossSellFor } = body;
 
   if (!imageBase64 || !imageMimeType) {
     return NextResponse.json({ error: "Missing imageBase64 or imageMimeType." }, { status: 400 });
   }
-  const selectedCategories = (categories ?? []).filter((c) => CATEGORIES.includes(c));
-  if (selectedCategories.length === 0) {
-    return NextResponse.json({ error: "Select at least one category to analyze." }, { status: 400 });
+  if (!category && !crossSellFor) {
+    return NextResponse.json({ error: "Body must include either `category` or `crossSellFor`." }, { status: 400 });
   }
 
   const ai = new GoogleGenAI({ apiKey });
 
-  async function rankCandidates(
-    systemPrompt: string,
-    label: string,
-    candidates: { id: string; brand: string; productLine: string; description: string; styleTags: string[] }[],
-  ): Promise<MatchResult[]> {
+  async function rankCandidates(systemPrompt: string, label: string, candidates: CandidateForModel[]): Promise<MatchResult[]> {
+    const callStart = Date.now();
+    console.log(`[analyze:timing] Gemini call START label="${label}" candidateCount=${candidates.length}`);
     const response = await withRetry(() =>
       ai.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: GEMINI_MODEL,
         contents: [
           {
             role: "user",
@@ -143,81 +161,71 @@ export async function POST(req: NextRequest) {
           responseMimeType: "application/json",
           responseSchema: RESPONSE_SCHEMA,
           // Gemini 3.5's hidden "thinking" tokens count against maxOutputTokens.
-          // 3072 was enough for single-category calls (max 9 candidates) but a live
-          // test showed the cross-sell call (up to 16 candidates across 3 unselected
-          // categories) got truncated into invalid JSON at that budget. Raised to
-          // 4096 for headroom on the largest candidate set this route ever sends.
           maxOutputTokens: 4096,
         },
       }),
     );
+    console.log(`[analyze:timing] Gemini call END label="${label}" durationMs=${Date.now() - callStart}`);
 
     const raw = response.text;
     if (!raw) throw new Error("Empty response from model.");
-    let cleaned: string;
     try {
-      cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+      const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
       return JSON.parse(cleaned) as MatchResult[];
     } catch {
       throw new Error("Model response was not valid JSON.");
     }
   }
 
-  const results = await Promise.all(
-    selectedCategories.map(async (category) => {
-      const candidates = getCatalogByCategory(category).map((p) => ({
-        id: p.id,
-        brand: p.brand,
-        productLine: p.productLine,
-        description: p.description,
-        styleTags: p.styleTags,
-      }));
-
-      try {
-        const matches = await rankCandidates(SYSTEM_PROMPT, category, candidates);
-        return { category, matches: selectTopMatches(matches), error: null as string | null };
-      } catch (err) {
-        return {
-          category,
-          matches: [] as MatchResult[],
-          error: err instanceof Error ? err.message : "Analysis failed for this category.",
-        };
-      }
-    }),
-  );
-
-  const unselectedCategories = CATEGORIES.filter((c) => !selectedCategories.includes(c));
-  let crossSell: { category: Category; match: MatchResult }[] = [];
-
-  if (unselectedCategories.length > 0) {
-    const crossCandidates = catalog
-      .filter((p) => unselectedCategories.includes(p.category))
-      .map((p) => ({
-        id: p.id,
-        brand: p.brand,
-        productLine: p.productLine,
-        description: p.description,
-        styleTags: p.styleTags,
-      }));
-
+  // Mode 1: rank a single category.
+  if (category) {
+    if (!CATEGORIES.includes(category)) {
+      return NextResponse.json({ error: `Unknown category "${category}".` }, { status: 400 });
+    }
     try {
-      const ranked = await rankCandidates(
-        CROSS_SELL_SYSTEM_PROMPT,
-        "cross-category (any of: " + unselectedCategories.join(", ") + ")",
-        crossCandidates,
-      );
-      const topTwo = [...ranked].sort((a, b) => a.rank - b.rank).slice(0, 2);
-      crossSell = topTwo
-        .map((match) => {
-          const product = getProductById(match.id);
-          return product ? { category: product.category, match } : null;
-        })
-        .filter((item): item is { category: Category; match: MatchResult } => item !== null);
+      const matches = await rankCandidates(SYSTEM_PROMPT, category, toCandidates(category));
+      console.log(`[analyze:timing] category="${category}" TOTAL requestDurationMs=${Date.now() - requestStart}`);
+      return NextResponse.json({ category, matches: selectTopMatches(matches), error: null });
     } catch (err) {
-      console.error("Cross-sell ranking failed:", err);
-      crossSell = [];
+      console.log(`[analyze:timing] category="${category}" FAILED requestDurationMs=${Date.now() - requestStart}`);
+      return NextResponse.json({
+        category,
+        matches: [],
+        error: err instanceof Error ? err.message : "Analysis failed for this category.",
+      });
     }
   }
 
-  return NextResponse.json({ results, crossSell });
+  // Mode 2: cross-sell across whatever the client says is unselected.
+  const selected = (crossSellFor ?? []).filter((c) => CATEGORIES.includes(c));
+  const unselectedCategories = CATEGORIES.filter((c) => !selected.includes(c));
+
+  if (unselectedCategories.length === 0) {
+    return NextResponse.json({ crossSell: [] });
+  }
+
+  const crossCandidates = catalog
+    .filter((p) => unselectedCategories.includes(p.category))
+    .map((p) => ({ id: p.id, brand: p.brand, productLine: p.productLine, description: p.description, styleTags: p.styleTags }));
+
+  try {
+    const ranked = await rankCandidates(
+      CROSS_SELL_SYSTEM_PROMPT,
+      "cross-category (any of: " + unselectedCategories.join(", ") + ")",
+      crossCandidates,
+    );
+    const topTwo = [...ranked].sort((a, b) => a.rank - b.rank).slice(0, 2);
+    const crossSell = topTwo
+      .map((match) => {
+        const product = getProductById(match.id);
+        return product ? { category: product.category, match } : null;
+      })
+      .filter((item): item is { category: Category; match: MatchResult } => item !== null);
+    console.log(`[analyze:timing] cross-sell TOTAL requestDurationMs=${Date.now() - requestStart}`);
+    return NextResponse.json({ crossSell });
+  } catch (err) {
+    console.error("Cross-sell ranking failed:", err);
+    console.log(`[analyze:timing] cross-sell FAILED requestDurationMs=${Date.now() - requestStart}`);
+    return NextResponse.json({ crossSell: [] });
+  }
 }
