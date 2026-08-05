@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
+import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const display = Space_Grotesk({
+const display = Fraunces({
   subsets: ["latin"],
-  weight: ["500", "700"],
+  weight: ["500", "600"],
   variable: "--font-display",
   display: "swap",
 });
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`}>
-      <body className="bg-ink text-stone-light font-body antialiased">{children}</body>
+      <body className="bg-paper text-charcoal font-body antialiased">{children}</body>
     </html>
   );
 }

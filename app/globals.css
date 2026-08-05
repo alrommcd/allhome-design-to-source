@@ -4,41 +4,16 @@
 
 @layer base {
   ::selection {
-    background-color: #c9a45533;
-    color: #e4c482;
+    background-color: #c9a45540;
+    color: #2a2520;
   }
 }
 
 @layer utilities {
   .bp-grid {
     background-image:
-      linear-gradient(rgba(201, 164, 85, 0.07) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(201, 164, 85, 0.07) 1px, transparent 1px);
+      linear-gradient(rgba(201, 164, 85, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(201, 164, 85, 0.025) 1px, transparent 1px);
     background-size: 32px 32px;
-  }
-
-  .corner-brackets {
-    position: relative;
-  }
-  .corner-brackets::before,
-  .corner-brackets::after {
-    content: "";
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    border-color: #c9a455;
-    opacity: 0.6;
-  }
-  .corner-brackets::before {
-    top: -1px;
-    left: -1px;
-    border-top: 1px solid;
-    border-left: 1px solid;
-  }
-  .corner-brackets::after {
-    bottom: -1px;
-    right: -1px;
-    border-bottom: 1px solid;
-    border-right: 1px solid;
   }
 }

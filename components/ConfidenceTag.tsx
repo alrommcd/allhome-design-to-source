@@ -9,7 +9,7 @@ const STYLES: Record<Confidence, string> = {
 export default function ConfidenceTag({ confidence }: { confidence: Confidence }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 font-mono text-[11px] uppercase tracking-wider ${STYLES[confidence]}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[11px] uppercase tracking-wider ${STYLES[confidence]}`}
     >
       <span className="h-1.5 w-1.5 rounded-full bg-current" />
       {confidence} confidence

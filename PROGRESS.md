@@ -1,10 +1,16 @@
 # Progress: AllHome Design-to-Source Agent
 
-Current state: full consolidation pass complete, 2026-08-05. Physical-form-only matching, three-state
+Current state: full visual redesign complete, 2026-08-05 (later same day). Warm ivory/gold palette,
+Fraunces display serif, pill buttons, logo integrated in the header, sourced directly from
+`public/logo.png` and `public/landingpage.png` as brand references. Applied consistently across every
+screen (homepage, results, cross-sell, quotation flow, `/review`). Functionality and data logic
+untouched, visual layer only. Typecheck, lint, and production build all pass. Live-tested end to end in
+a real browser against the real Gemini API, including a full 8-screen screenshot pass. Not yet deployed
+anywhere, local only.
+
+Prior state (functional consolidation pass, still current): physical-form-only matching, three-state
 image honesty system, no pricing anywhere (quotation-request flow instead), capped 1-2 results per
-category, up to 2 cross-sell suggestions, facade template moved last. Typecheck, lint, and production
-build all pass. Live-tested end to end in a real browser against the real Gemini API (see DECISIONS.md
-for exact findings). Not yet deployed anywhere - local only.
+category, up to 2 cross-sell suggestions, facade template moved last. See DECISIONS.md for exact findings.
 
 ## Catalog snapshot (25 products, 2026-08-05)
 
@@ -50,22 +56,22 @@ Correct at `/review`.
 
 - Populate representative images for the 7 pending lighting entries (6 brand-new product lines need a
   first pass, 1 needs a redo) via generic-terminology search, not brand-specific claims this time.
-- Live-verify the cross-sell `maxOutputTokens` fix (3072 to 4096). One live test this session hit a real
-  truncation failure on the 16-candidate cross-sell call ("Model response was not valid JSON") - the fix
-  is applied and typechecks/builds clean, but wasn't re-tested live afterward to conserve the day's Gemini
-  quota, which is limited right now (see DECISIONS.md).
 - Spot-check Analyze against the other 3 templates and the other 3 categories (facades, hardware,
   surfaces) - only Lighting on the living room template has been live-tested against the new prompt.
 - Om reviews the 18 "representative" candidates at `/review` and clicks Correct/Pending on each.
 - Deploy to Vercel, set `GEMINI_API_KEY` there, smoke-test the deployed `/api/analyze` route specifically.
+- Om review of the redesign itself (this was explicitly requested as a checkpoint before considering it
+  done) - screenshots taken of all 8 screens/states, described in chat, dev server left running for
+  direct browser review.
 
 ## Known issues / deferred
 
 - 7 of 25 products have no image at all yet (see catalog snapshot above) - they show the physical
   description and a Google search link, never a broken image or empty box.
-- Cross-sell reliability: has now failed live twice across this project's testing (once on 429 quota,
-  once on JSON truncation before the token-budget fix). It always degrades gracefully (empty array,
-  primary results unaffected), but it's a real occasional failure mode worth expecting, not a hypothetical.
+- Cross-sell reliability: failed live twice earlier in testing (once on 429 quota, once on JSON
+  truncation before the maxOutputTokens 3072->4096 fix). That fix is now live-verified: this pass's
+  Analyze call returned 2 valid cross-sell suggestions cleanly. Always degrades gracefully either way
+  (empty array, primary results unaffected), but treat as a real occasional failure mode, not eliminated.
 - Gemini's free-tier daily quota (20 requests/day/model) has been exhausted multiple times this session
   across multiple API keys under what appears to be the same Google Cloud project - rotating keys within
   the same project does not reset it. Budget live testing accordingly.

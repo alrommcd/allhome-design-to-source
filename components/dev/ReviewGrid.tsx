@@ -9,6 +9,16 @@ interface ReviewGridProps {
   notes: Record<string, string>;
 }
 
+const COLORS = {
+  border: "#E3DAC9",
+  surface: "#FBF8F2",
+  charcoal: "#2A2520",
+  muted: "#8C8477",
+  brass: "#C9A455",
+  terracotta: "#B4694B",
+  placeholderBg: "#F0EAD9",
+};
+
 export default function ReviewGrid({ products, notes }: ReviewGridProps) {
   const router = useRouter();
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -38,25 +48,28 @@ export default function ReviewGrid({ products, notes }: ReviewGridProps) {
   }
 
   return (
-    <div>
-      {error && <p style={{ color: "red" }}>Error: {error}</p>}
+    <div className="mt-6">
+      {error && <p style={{ color: COLORS.terracotta }}>Error: {error}</p>}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
         {products.map((product) => {
           const hasCandidate = product.imageStatus !== "pending" && product.imageUrl !== "PLACEHOLDER";
           const sessionStatus = reviewed[product.id];
           return (
-            <div key={product.id} style={{ border: "1px solid #999", padding: 8 }}>
-              <div style={{ fontSize: 11, color: "#666" }}>
+            <div
+              key={product.id}
+              style={{ border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 12, background: COLORS.surface }}
+            >
+              <div style={{ fontSize: 11, color: COLORS.muted }}>
                 {product.category} · {product.brand}
               </div>
-              <div style={{ fontWeight: "bold" }}>{product.productLine}</div>
+              <div style={{ fontWeight: 600, color: COLORS.charcoal }}>{product.productLine}</div>
 
               {hasCandidate ? (
                 // eslint-disable-next-line @next/next/no-img-element -- dev-only tool, arbitrary external hosts
                 <img
                   src={product.imageUrl}
                   alt={product.productLine}
-                  style={{ width: "100%", height: 180, objectFit: "cover", margin: "8px 0" }}
+                  style={{ width: "100%", height: 180, objectFit: "cover", margin: "8px 0", borderRadius: 8 }}
                 />
               ) : (
                 <div
@@ -66,10 +79,11 @@ export default function ReviewGrid({ products, notes }: ReviewGridProps) {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    background: "#eee",
+                    background: COLORS.placeholderBg,
+                    borderRadius: 8,
                     margin: "8px 0",
                     fontSize: 12,
-                    color: "#666",
+                    color: COLORS.muted,
                   }}
                 >
                   No candidate found
@@ -77,23 +91,46 @@ export default function ReviewGrid({ products, notes }: ReviewGridProps) {
               )}
 
               {notes[product.id] && (
-                <p style={{ fontSize: 11, color: "#a00", margin: "4px 0" }}>{notes[product.id]}</p>
+                <p style={{ fontSize: 11, color: COLORS.terracotta, margin: "4px 0" }}>{notes[product.id]}</p>
               )}
 
-              <p style={{ fontSize: 11, color: "#666", margin: "4px 0" }}>
+              <p style={{ fontSize: 11, color: COLORS.muted, margin: "4px 0" }}>
                 imageStatus: {product.imageStatus}
                 {sessionStatus && ` (you marked this ${sessionStatus} this session)`}
               </p>
 
-              <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                 <button
                   onClick={() => handleVerify(product.id, "verified")}
                   disabled={!hasCandidate || pendingId === product.id}
+                  style={{
+                    borderRadius: 999,
+                    border: `1px solid ${COLORS.brass}`,
+                    background: COLORS.brass,
+                    color: COLORS.charcoal,
+                    padding: "4px 12px",
+                    fontSize: 12,
+                    fontWeight: 500,
+                    opacity: !hasCandidate || pendingId === product.id ? 0.4 : 1,
+                  }}
                 >
-                  ✓ Correct: mark Verified
+                  Correct: mark Verified
                 </button>
-                <button onClick={() => handleVerify(product.id, "pending")} disabled={pendingId === product.id}>
-                  ✗ Wrong: mark Pending
+                <button
+                  onClick={() => handleVerify(product.id, "pending")}
+                  disabled={pendingId === product.id}
+                  style={{
+                    borderRadius: 999,
+                    border: `1px solid ${COLORS.border}`,
+                    background: "transparent",
+                    color: COLORS.muted,
+                    padding: "4px 12px",
+                    fontSize: 12,
+                    fontWeight: 500,
+                    opacity: pendingId === product.id ? 0.4 : 1,
+                  }}
+                >
+                  Wrong: mark Pending
                 </button>
               </div>
             </div>

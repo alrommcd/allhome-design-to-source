@@ -30,18 +30,18 @@ export default function ResultsPanel({ results, crossSell, selectedProducts, onS
     <div className="flex flex-col gap-10">
       {results.map((result) => (
         <div key={result.category}>
-          <p className="mb-3 font-mono text-xs uppercase tracking-widest text-brass">
+          <p className="mb-3 font-body text-xs uppercase tracking-[0.15em] text-brass">
             {CATEGORY_LABELS[result.category]}
           </p>
 
           {result.error && (
-            <p className="border border-signal-low/40 bg-signal-low/5 p-3 text-sm text-stone">
+            <p className="rounded-xl border border-signal-low/30 bg-signal-low/[0.06] p-3 text-sm text-charcoal/85">
               Could not analyze this category: {result.error}
             </p>
           )}
 
           {!result.error && result.matches.length === 0 && (
-            <p className="text-sm text-stone">No candidates returned.</p>
+            <p className="text-sm text-muted">No candidates returned.</p>
           )}
 
           {!result.error && result.matches.length > 0 && (
@@ -67,10 +67,10 @@ export default function ResultsPanel({ results, crossSell, selectedProducts, onS
       ))}
 
       {crossSell.length > 0 && (
-        <div className="border-t border-ink-line pt-6">
+        <div className="border-t border-paper-line pt-6">
           <button
             onClick={() => setCrossSellOpen((v) => !v)}
-            className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-stone hover:text-brass"
+            className="flex items-center gap-2 font-body text-xs uppercase tracking-[0.15em] text-muted transition-colors hover:text-brass"
           >
             <span>{crossSellOpen ? "▾" : "▸"}</span>
             Also detected in this image
@@ -83,7 +83,7 @@ export default function ResultsPanel({ results, crossSell, selectedProducts, onS
                 if (!product) return null;
                 return (
                   <div key={item.match.id}>
-                    <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-stone">
+                    <p className="mb-2 font-body text-[10px] uppercase tracking-[0.15em] text-muted">
                       {CATEGORY_LABELS[item.category]}
                     </p>
                     <ProductCard

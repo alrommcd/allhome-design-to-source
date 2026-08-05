@@ -6,9 +6,9 @@ import ReviewGrid from "@/components/dev/ReviewGrid";
 // fresh on every request so it reflects edits made by the verify-image API route.
 export default function ReviewPage() {
   return (
-    <div style={{ padding: 16, fontFamily: "sans-serif" }}>
-      <h1>Image candidate review ({catalog.length} products)</h1>
-      <p>
+    <div className="min-h-screen bg-paper p-6 text-charcoal">
+      <h1 className="font-display text-xl font-medium">Image candidate review ({catalog.length} products)</h1>
+      <p className="mt-2 max-w-2xl text-sm text-muted">
         Click Correct to mark this image Verified in lib/catalog.ts. Click Wrong to mark it Pending,
         which removes the representative image from display and shows the search-on-Google fallback
         instead.

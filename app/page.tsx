@@ -102,17 +102,20 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bp-grid">
-      <header className="border-b border-ink-line px-6 py-6 md:px-10">
-        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-brass">AllHome</p>
-        <h1 className="font-display text-2xl font-medium text-stone-light md:text-3xl">Design-to-Source</h1>
-        <p className="mt-1 max-w-2xl text-sm text-stone">
+      <header className="border-b border-paper-line px-6 py-6 md:px-10">
+        <div className="flex items-center gap-4">
+          <Image src="/logo.png" alt="AllHome" width={597} height={335} className="h-8 w-auto md:h-9" priority />
+          <span className="h-6 w-px bg-paper-line" aria-hidden />
+          <h1 className="font-display text-2xl font-medium text-charcoal md:text-3xl">Design-to-Source</h1>
+        </div>
+        <p className="mt-3 max-w-2xl text-sm text-muted">
           Select a template room, choose the product categories you need sourced, and match the room&apos;s
           design language to real AllHome SKUs.
         </p>
       </header>
 
-      <div className="px-6 py-8 md:px-10">
-        <div className="flex flex-col gap-8">
+      <div className="px-6 py-10 md:px-10">
+        <div className="flex flex-col gap-10">
           <TemplatePicker templates={templates} selectedId={selectedTemplateId} onSelect={setSelectedTemplateId} />
           <CategorySelector selected={selectedCategories} onToggle={toggleCategory} />
 
@@ -120,41 +123,41 @@ export default function Home() {
             <button
               onClick={handleAnalyze}
               disabled={status === "loading"}
-              className="border border-brass bg-brass px-6 py-2.5 font-mono text-xs uppercase tracking-widest text-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-full bg-brass px-7 py-2.5 font-body text-xs font-medium uppercase tracking-widest text-charcoal transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {status === "loading" ? "Analyzing…" : "Analyze"}
             </button>
             {status === "loading" && (
-              <span className="flex items-center gap-2 font-mono text-xs text-stone">
+              <span className="flex items-center gap-2 text-xs text-muted">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-brass" />
                 Matching against catalog for {selectedCategories.size} categor{selectedCategories.size === 1 ? "y" : "ies"}…
               </span>
             )}
             {status === "error" && errorMessage && (
-              <span className="font-mono text-xs text-signal-low">{errorMessage}</span>
+              <span className="text-xs text-signal-low">{errorMessage}</span>
             )}
           </div>
         </div>
 
         {status === "done" && (
-          <div className="mt-12 grid grid-cols-1 gap-10 lg:grid-cols-[280px_1fr]">
+          <div className="mt-14 grid grid-cols-1 gap-10 lg:grid-cols-[280px_1fr]">
             <aside className="lg:sticky lg:top-8 lg:self-start">
-              <p className="mb-3 font-mono text-xs uppercase tracking-widest text-stone">Template</p>
-              <div className="corner-brackets relative aspect-[4/3] overflow-hidden border border-ink-line">
+              <p className="mb-3 font-body text-xs uppercase tracking-[0.15em] text-muted">Template</p>
+              <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-paper-line">
                 {selectedTemplate && (
                   <Image src={selectedTemplate.imageUrl} alt={selectedTemplate.label} fill className="object-cover" />
                 )}
               </div>
-              <p className="mt-2 font-mono text-xs uppercase tracking-wider text-stone-light">
+              <p className="mt-2 font-body text-xs uppercase tracking-wider text-charcoal">
                 {selectedTemplate?.label}
               </p>
 
-              <div className="mt-6 border border-ink-line p-3">
-                <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-stone">Added to quotation</p>
-                {quoteProducts.length === 0 && <p className="text-xs text-stone/60">Nothing added yet</p>}
+              <div className="mt-6 rounded-xl border border-paper-line bg-paper-surface p-4">
+                <p className="mb-2 font-body text-[11px] uppercase tracking-[0.15em] text-muted">Added to quotation</p>
+                {quoteProducts.length === 0 && <p className="text-xs text-muted/70">Nothing added yet</p>}
                 <ul className="flex flex-col gap-1">
                   {quoteProducts.map((p) => (
-                    <li key={p.id} className="text-xs text-stone-light">
+                    <li key={p.id} className="text-xs text-charcoal">
                       {CATEGORY_LABELS[p.category]}: {p.productLine}
                     </li>
                   ))}
@@ -162,7 +165,7 @@ export default function Home() {
                 <button
                   onClick={() => setView("quote")}
                   disabled={quoteProducts.length === 0}
-                  className="mt-3 w-full border border-brass py-2 font-mono text-[11px] uppercase tracking-widest text-brass transition-colors hover:bg-brass hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
+                  className="mt-4 w-full rounded-full bg-brass py-2.5 font-body text-[11px] font-medium uppercase tracking-widest text-charcoal transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:bg-paper-line disabled:text-muted disabled:opacity-100"
                 >
                   View Quotation
                 </button>
