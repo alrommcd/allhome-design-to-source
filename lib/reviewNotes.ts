@@ -5,17 +5,23 @@
  */
 export const reviewNotes: Record<string, string> = {
   "ledlum-slim-magnetic-track":
-    "Ledlum's site has no page literally named this; used the Indoor Series hero, whose page lists 'Slim Magnetic Track, Fixtures, Accessories' as a sub-category.",
-  "ledlum-customised-indoor":
-    "NO CANDIDATE FOUND. No distinct page or image on the official site beyond the generic Indoor Series hero already used elsewhere.",
-  "ledlum-accent-lighting":
-    "Inferred match: Artizan Series (micro spots, wall washers, downlights) is not literally labeled 'Accent Lighting' on the site.",
+    "Downgraded from 'representative' to 'pending' during the physical-form catalog rewrite: the previously used Indoor Series hero image doesn't clearly show a magnetic track system under the new stricter standard. Needs a fresh representative photo, ideally via generic terminology search rather than brand-specific claims.",
+  "ledlum-led-cob-concealed-downlight":
+    "NEW ENTRY (Led Cob Concealed Down Light Fixtures). No image research done yet.",
+  "ledlum-led-linear-tube-lights":
+    "NEW ENTRY (Led Linear Tube Lights). No image research done yet.",
+  "ledlum-led-strip-lights-24v":
+    "NEW ENTRY (Led Strip Lights 24V). No image research done yet.",
+  "ledlum-led-indoor-wall-light":
+    "NEW ENTRY (Led Indoor Wall Light). No image research done yet.",
+  "ledlum-led-linear-mirror-lights":
+    "NEW ENTRY (Led Linear Mirror Lights, Tiltable). No image research done yet.",
+  "ledlum-led-surface-panel":
+    "NEW ENTRY (Led Surface Panel). No image research done yet.",
+  "ledlum-klewe-architectural-fans":
+    "Carried forward from the old 'Klewe Premium Architectural Fans' entry: image is Ledlum's real Volaris fan line photo. Used as a representative decorative-fan image since this catalog entry no longer claims a specific Klewe-branded photo (Ledlum's actual Klewe line is solar garden lighting, not fans).",
   "ledlum-landscape-lighting":
-    "Outdoor Series hero; sub-categories include bollards, pole lights, garden spikes. Landscape fixture types.",
-  "ledlum-klewe-fans":
-    "NAMING MISMATCH: Ledlum's actual 'Klewe' series is solar outdoor garden lighting, not fans. Their real fan line is called 'Volaris'. Used that instead. Check this one carefully.",
-  "ledlum-smart-lighting":
-    "NO CANDIDATE FOUND. No dedicated page/image; only a buried line item ('Vision Series - Wireless Automation Drivers').",
+    "Carried forward: Outdoor Series hero image, reasonable representative fit for bollards/uplighter/wall-wash fixture types.",
 
   "metalia-parametric-facade-panels":
     "Official Metalia catalogue photo for their 'Parametric' facade system, direct match.",

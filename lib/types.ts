@@ -2,6 +2,11 @@ export type Category = "lighting" | "facades" | "hardware" | "surfaces";
 
 export type Confidence = "High" | "Medium" | "Low";
 
+// verified: a human confirmed this photo is the actual real AllHome/brand SKU.
+// representative: a real, honestly-sourced photo of the general product type, not a confirmed exact SKU.
+// pending: no photo found or confirmed.
+export type ImageStatus = "verified" | "representative" | "pending";
+
 export interface Product {
   id: string;
   brand: string;
@@ -11,8 +16,7 @@ export interface Product {
   styleTags: string[];
   materials: string[];
   imageUrl: string;
-  imageVerified: boolean;
-  priceRangeINR: [number, number];
+  imageStatus: ImageStatus;
   sourceUrl: string;
 }
 

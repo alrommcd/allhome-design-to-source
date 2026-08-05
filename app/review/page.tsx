@@ -9,8 +9,9 @@ export default function ReviewPage() {
     <div style={{ padding: 16, fontFamily: "sans-serif" }}>
       <h1>Image candidate review ({catalog.length} products)</h1>
       <p>
-        Click Correct to flip imageVerified to true in lib/catalog.ts. Click Wrong to leave it false. It
-        stays a pending-verification placeholder in the real app either way.
+        Click Correct to mark this image Verified in lib/catalog.ts. Click Wrong to mark it Pending,
+        which removes the representative image from display and shows the search-on-Google fallback
+        instead.
       </p>
       <ReviewGrid products={catalog} notes={reviewNotes} />
     </div>

@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { getProductById } from "@/lib/catalog";
+import type { ImageStatus } from "@/lib/types";
 
 const CATALOG_PATH = path.join(process.cwd(), "lib", "catalog.ts");
+const VALID_STATUSES: ImageStatus[] = ["verified", "representative", "pending"];
 
 export async function POST(req: NextRequest) {
   if (process.env.NODE_ENV === "production") {
@@ -13,16 +15,19 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { id?: string; verified?: boolean };
+  let body: { id?: string; status?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Request body must be JSON." }, { status: 400 });
   }
 
-  const { id, verified } = body;
-  if (!id || typeof verified !== "boolean") {
-    return NextResponse.json({ error: "Body must include { id: string, verified: boolean }." }, { status: 400 });
+  const { id, status } = body;
+  if (!id || !status || !VALID_STATUSES.includes(status as ImageStatus)) {
+    return NextResponse.json(
+      { error: 'Body must include { id: string, status: "verified" | "representative" | "pending" }.' },
+      { status: 400 },
+    );
   }
 
   const product = getProductById(id);
@@ -37,21 +42,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Could not locate id "${id}" in catalog.ts.` }, { status: 500 });
   }
 
-  const fieldName = "imageVerified: ";
+  const fieldName = 'imageStatus: "';
   const fieldIdx = text.indexOf(fieldName, idIdx);
   if (fieldIdx === -1) {
-    return NextResponse.json({ error: `Could not locate imageVerified field for "${id}".` }, { status: 500 });
+    return NextResponse.json({ error: `Could not locate imageStatus field for "${id}".` }, { status: 500 });
   }
 
   const valueStart = fieldIdx + fieldName.length;
-  const currentValue = text.startsWith("true", valueStart) ? "true" : text.startsWith("false", valueStart) ? "false" : null;
-  if (!currentValue) {
-    return NextResponse.json({ error: `Unexpected imageVerified value for "${id}".` }, { status: 500 });
+  const valueEnd = text.indexOf('"', valueStart);
+  if (valueEnd === -1) {
+    return NextResponse.json({ error: `Malformed imageStatus field for "${id}".` }, { status: 500 });
   }
 
-  const newText =
-    text.slice(0, valueStart) + String(verified) + text.slice(valueStart + currentValue.length);
+  const newText = text.slice(0, valueStart) + status + text.slice(valueEnd);
   fs.writeFileSync(CATALOG_PATH, newText);
 
-  return NextResponse.json({ ok: true, id, verified });
+  return NextResponse.json({ ok: true, id, status });
 }

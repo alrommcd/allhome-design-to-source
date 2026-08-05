@@ -8,7 +8,7 @@ import { CATEGORY_LABELS, type Category } from "@/lib/types";
 import { fetchImageAsBase64 } from "@/lib/imageToBase64";
 import TemplatePicker from "@/components/TemplatePicker";
 import CategorySelector from "@/components/CategorySelector";
-import ResultsPanel, { type CategoryResult } from "@/components/ResultsPanel";
+import ResultsPanel, { type CategoryResult, type CrossSellItem } from "@/components/ResultsPanel";
 import QuoteView from "@/components/QuoteView";
 import Footer from "@/components/Footer";
 
@@ -20,7 +20,7 @@ export default function Home() {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [results, setResults] = useState<CategoryResult[]>([]);
-  const [crossSell, setCrossSell] = useState<{ category: Category; match: { id: string; rank: number; rationale: string; confidence: "High" | "Medium" | "Low" } } | null>(null);
+  const [crossSell, setCrossSell] = useState<CrossSellItem[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<Partial<Record<Category, string>>>({});
   const [view, setView] = useState<"source" | "quote">("source");
 
@@ -79,7 +79,7 @@ export default function Home() {
 
       const body = await response.json();
       setResults(body.results ?? []);
-      setCrossSell(body.crossSell ?? null);
+      setCrossSell(body.crossSell ?? []);
       setStatus("done");
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Analysis failed. Try again.");
@@ -150,8 +150,8 @@ export default function Home() {
               </p>
 
               <div className="mt-6 border border-ink-line p-3">
-                <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-stone">Selected for quote</p>
-                {quoteProducts.length === 0 && <p className="text-xs text-stone/60">Nothing selected yet</p>}
+                <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-stone">Added to quotation</p>
+                {quoteProducts.length === 0 && <p className="text-xs text-stone/60">Nothing added yet</p>}
                 <ul className="flex flex-col gap-1">
                   {quoteProducts.map((p) => (
                     <li key={p.id} className="text-xs text-stone-light">
@@ -164,7 +164,7 @@ export default function Home() {
                   disabled={quoteProducts.length === 0}
                   className="mt-3 w-full border border-brass py-2 font-mono text-[11px] uppercase tracking-widest text-brass transition-colors hover:bg-brass hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
                 >
-                  Generate Quote
+                  View Quotation
                 </button>
               </div>
             </aside>

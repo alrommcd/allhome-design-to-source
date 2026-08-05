@@ -1,65 +1,73 @@
 # Progress: AllHome Design-to-Source Agent
 
-Current state: MVP is built, runs locally (`npm run dev`, http://localhost:3000), and has been verified
-end to end in a real browser (Playwright), not just via curl. `ARCHITECTURE.md` documents the full system
-for a non-engineer. Template picker, category selector, Analyze flow, results panel with confidence tiers,
-collapsed cross-sell section, and the Sample Estimate / quote screen are all wired up and confirmed
-working live against the real Gemini API. Typecheck, lint, and production build all pass.
+Current state: full consolidation pass complete, 2026-08-05. Physical-form-only matching, three-state
+image honesty system, no pricing anywhere (quotation-request flow instead), capped 1-2 results per
+category, up to 2 cross-sell suggestions, facade template moved last. Typecheck, lint, and production
+build all pass. Live-tested end to end in a real browser against the real Gemini API (see DECISIONS.md
+for exact findings). Not yet deployed anywhere - local only.
 
-2026-08-05, later same session: full browser-driven smoke test (living room template, Lighting category)
-found everything worked end to end (6 ranked cards, correct 2 High / 2 Medium / 2 Low confidence split,
-"Closest available match" framing only on Medium/Low, cross-sell correctly surfaced Window Factory sliding
-windows for the visible glass doors, quote math checked out exactly). It also found 11 em dashes across UI
-copy and catalog data, a direct violation of CLAUDE.md's hard rule, now fixed everywhere (code, docs
-included). See DECISIONS.md for the full list of what broke and what didn't.
+## Catalog snapshot (25 products, 2026-08-05)
 
-Last completed: Live end-to-end verification, 2026-08-05. Ran `/api/analyze` against the real Gemini API
-with a real key, the actual livingroom.png template, and the "lighting" category. Found and fixed a real
-bug in the process: `maxOutputTokens: 1000` truncated responses mid-JSON because Gemini 3.5's hidden
-thinking tokens count against that budget. Raised to 3072. Also found and fixed a silent-failure bug in
-the cross-sell catch block (no logging on error). Re-verified after both fixes: primary ranking and
-cross-sell both return complete, valid, image-grounded results. Typecheck/lint/build all still pass.
+| Category | Count | Verified | Representative | Pending |
+|---|---|---|---|---|
+| Lighting (Ledlum, 9 new product lines) | 9 | 0 | 2 | 7 |
+| External Facades (Metalia, Window Factory) | 6 | 0 | 6 | 0 |
+| Home Hardware & Bath (Fiamarc, Shapes, House of W) | 6 | 0 | 6 | 0 |
+| Surface Treatments (Colour Coats) | 4 | 0 | 4 | 0 |
+| **Total** | **25** | **0** | **18** | **7** |
 
-Four real template renders (elevation.png, livingroom.png, reception.png, washroom.png) are live in
-/public/templates. No placeholder templates remain. Catalog has all 22 real seed products across the 4
-categories (6 lighting, 6 facades, 6 hardware, 4 surfaces. Corrected from an earlier miscount of "24" in
-this file, PROGRESS.md, and prior commit messages; the array itself was always right, only the prose
-describing it was wrong).
+The 7 pending lighting entries: 6 are brand-new product lines added this pass (Led Cob Concealed
+Downlight, Led Linear Tube Lights, Led Strip Lights 24V, Led Indoor Wall Light, Led Linear Mirror Lights,
+Led Surface Panel) with no image research done yet; 1 (Slim Magnetic Track) was deliberately downgraded
+from its old image because that photo doesn't clearly show a track system under the new stricter
+"representative" standard. None of the 25 are `"verified"` - that only happens through a human clicking
+Correct at `/review`.
 
-2026-08-05, later same session: ran the automated image-search pass ("[Brand] [Product Line] India" via
-4 parallel research agents) across all 22 products and populated `imageUrl` for 20 of them: 2 came back
-with no confident candidate (`ledlum-customised-indoor`, `ledlum-smart-lighting`). `imageVerified` stays
-`false` on all 22; nothing is confirmed until a human clicks through it. Research notes (including several
-real brand-naming mismatches, e.g. Ledlum's actual fan line is "Volaris" not "Klewe") live in
-`lib/reviewNotes.ts`, keyed by product id, imported only by the new review tool. Built a dev-only
-`/review` page (`app/review/page.tsx` + `components/dev/ReviewGrid.tsx`) plus
-`app/api/dev/verify-image` (POST `{id, verified}`, writes `imageVerified` directly into `lib/catalog.ts`
-on disk, blocked in production) so Om can click through all 22 and confirm or reject each candidate.
-Switched `ProductImage.tsx` off `next/image` to a plain `<img>` in the process, since candidate images
-come from arbitrary brand domains next/image would otherwise refuse to render without an explicit
-`remotePatterns` allowlist entry per host.
+## What changed in this pass (see DECISIONS.md for full detail)
 
-Next up:
-- Om reviews all 22 candidates at `/review` (dev server only) and clicks Correct/Wrong on each.
-- The 2 products with no candidate (`ledlum-customised-indoor`, `ledlum-smart-lighting`) still need a
-  manually-sourced image. The automated search found nothing on Ledlum's site to match either.
-- Spot-check Analyze against the other 3 templates (elevation, reception, washroom) and the other 3
-  categories. Only lighting on livingroom.png has been live-tested so far.
-- Verify `gemini-3.5-flash` still holds by the time this ships: Google renames these often.
-- Deploy to Vercel, set `GEMINI_API_KEY` there, smoke-test the deployed `/api/analyze` route specifically
-  (serverless cold starts / env var scoping are the most common thing that silently breaks between local
-  and prod).
+- **Matching now forces physical form, never mood.** New system prompt forbids justifying a match by
+  warmth/glow/ambiance/coziness/color-temperature, and forbids using room layout to justify a *primary*
+  match (that inference is now explicitly reserved for a separate cross-sell-only prompt).
+- **Every catalog description rewritten** to physical form and installation type in standard industry
+  terminology - this is the actual signal sent to the model, not flavor text. `styleTags` converted from
+  mood words ("warm", "bohemian") to physical/installation descriptors.
+- **Lighting catalog fully replaced**: old 6-entry lineup (Slim Magnetic Track, Customised Indoor,
+  Accent, Landscape, Klewe fans, Smart Lighting) out; new 9-entry real Ledlum lineup in.
+- **Image honesty is now three states**, not a boolean: `"verified"` (green, human-confirmed via
+  `/review`) / `"representative"` (amber, a real photo of the general product type) / `"pending"` (gray,
+  no photo - shows the physical description plus a "Search on Google" link built from the real brand +
+  product line, always, never a dead end).
+- **No pricing anywhere.** `priceRangeINR` removed from the data model entirely. Cards say "Add to
+  Quotation," not "Select." The final screen is "Quotation Request" with a "Request Formal Quotation"
+  button (still non-functional by design), no subtotal, no rupee symbol anywhere in the UI.
+- **Results capped at 1-2 per category**, prioritizing High then Medium; if only Low exists, shows just
+  the single best one.
+- **Cross-sell now surfaces up to 2 suggestions** (was 1), from any unselected category.
+- **Template order**: facade/exterior template moved from first to last position. Confirmed live:
+  Sunset Living Room, Reception & Lounge, Powder Room Suite, Terracotta-Clad Elevation.
 
-Known issues / deferred:
-- No product images are verified yet. Every result card currently renders the "Image pending
-  verification" placeholder state by design, regardless of whether `imageUrl` now holds a candidate.
-- Several candidate images found tonight are flagged in `lib/reviewNotes.ts` as naming mismatches or weak
-  matches (e.g. Colour Coats "Seamless Flooring" candidate actually shows the finish on a wall, not a
-  floor). Worth reading the note before clicking Correct, not just eyeballing the photo.
-- Cross-sell suggestion (`crossSell` in the API response) issues one extra Gemini call across all
-  unselected categories combined and takes its top-ranked pick. Not explicitly speced in exact mechanism,
-  built as the simplest implementation that satisfies "at most one cross-sell suggestion." One live test
-  run saw this call fail transiently (no crossSell returned); the route degrades gracefully to `null`
-  rather than failing the whole request, but this is a real latency/reliability characteristic to expect,
-  not just a hypothetical.
-- "Request Formal Quote" is a non-functional CTA by design (per spec). It only flips local UI state.
+## Next up
+
+- Populate representative images for the 7 pending lighting entries (6 brand-new product lines need a
+  first pass, 1 needs a redo) via generic-terminology search, not brand-specific claims this time.
+- Live-verify the cross-sell `maxOutputTokens` fix (3072 to 4096). One live test this session hit a real
+  truncation failure on the 16-candidate cross-sell call ("Model response was not valid JSON") - the fix
+  is applied and typechecks/builds clean, but wasn't re-tested live afterward to conserve the day's Gemini
+  quota, which is limited right now (see DECISIONS.md).
+- Spot-check Analyze against the other 3 templates and the other 3 categories (facades, hardware,
+  surfaces) - only Lighting on the living room template has been live-tested against the new prompt.
+- Om reviews the 18 "representative" candidates at `/review` and clicks Correct/Pending on each.
+- Deploy to Vercel, set `GEMINI_API_KEY` there, smoke-test the deployed `/api/analyze` route specifically.
+
+## Known issues / deferred
+
+- 7 of 25 products have no image at all yet (see catalog snapshot above) - they show the physical
+  description and a Google search link, never a broken image or empty box.
+- Cross-sell reliability: has now failed live twice across this project's testing (once on 429 quota,
+  once on JSON truncation before the token-budget fix). It always degrades gracefully (empty array,
+  primary results unaffected), but it's a real occasional failure mode worth expecting, not a hypothetical.
+- Gemini's free-tier daily quota (20 requests/day/model) has been exhausted multiple times this session
+  across multiple API keys under what appears to be the same Google Cloud project - rotating keys within
+  the same project does not reset it. Budget live testing accordingly.
+- "Request Formal Quotation" does nothing beyond showing a confirmation message, by design.
+- Not deployed anywhere. Everything here has only run on a local dev machine.

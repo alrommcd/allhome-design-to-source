@@ -11,9 +11,14 @@ export interface CategoryResult {
   error: string | null;
 }
 
+export interface CrossSellItem {
+  category: Category;
+  match: MatchResult;
+}
+
 interface ResultsPanelProps {
   results: CategoryResult[];
-  crossSell: { category: Category; match: MatchResult } | null;
+  crossSell: CrossSellItem[];
   selectedProducts: Partial<Record<Category, string>>;
   onSelectProduct: (category: Category, productId: string) => void;
 }
@@ -40,7 +45,7 @@ export default function ResultsPanel({ results, crossSell, selectedProducts, onS
           )}
 
           {!result.error && result.matches.length > 0 && (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {[...result.matches]
                 .sort((a, b) => a.rank - b.rank)
                 .map((match) => {
@@ -61,30 +66,35 @@ export default function ResultsPanel({ results, crossSell, selectedProducts, onS
         </div>
       ))}
 
-      {crossSell && (
+      {crossSell.length > 0 && (
         <div className="border-t border-ink-line pt-6">
           <button
             onClick={() => setCrossSellOpen((v) => !v)}
             className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-stone hover:text-brass"
           >
             <span>{crossSellOpen ? "▾" : "▸"}</span>
-            Also detected in this image: {CATEGORY_LABELS[crossSell.category]}
+            Also detected in this image
           </button>
 
           {crossSellOpen && (
-            <div className="mt-4 max-w-sm">
-              {(() => {
-                const product = getProductById(crossSell.match.id);
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+              {crossSell.map((item) => {
+                const product = getProductById(item.match.id);
                 if (!product) return null;
                 return (
-                  <ProductCard
-                    product={product}
-                    match={crossSell.match}
-                    selected={selectedProducts[crossSell.category] === crossSell.match.id}
-                    onSelect={() => onSelectProduct(crossSell.category, crossSell.match.id)}
-                  />
+                  <div key={item.match.id}>
+                    <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-stone">
+                      {CATEGORY_LABELS[item.category]}
+                    </p>
+                    <ProductCard
+                      product={product}
+                      match={item.match}
+                      selected={selectedProducts[item.category] === item.match.id}
+                      onSelect={() => onSelectProduct(item.category, item.match.id)}
+                    />
+                  </div>
                 );
-              })()}
+              })}
             </div>
           )}
         </div>

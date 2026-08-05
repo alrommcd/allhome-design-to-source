@@ -1,12 +1,8 @@
 import type { TemplateRoom } from "./types";
 
+// Facade/exterior template intentionally last - interior templates lead since
+// they're the more immediately legible starting point for most demo walkthroughs.
 export const templates: TemplateRoom[] = [
-  {
-    id: "elevation",
-    label: "Terracotta-Clad Elevation",
-    imageUrl: "/templates/elevation.png",
-    isPlaceholder: false,
-  },
   {
     id: "livingroom",
     label: "Sunset Living Room",
@@ -23,6 +19,12 @@ export const templates: TemplateRoom[] = [
     id: "washroom",
     label: "Powder Room Suite",
     imageUrl: "/templates/washroom.png",
+    isPlaceholder: false,
+  },
+  {
+    id: "elevation",
+    label: "Terracotta-Clad Elevation",
+    imageUrl: "/templates/elevation.png",
     isPlaceholder: false,
   },
 ];

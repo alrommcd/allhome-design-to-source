@@ -32,13 +32,12 @@ export default function ProductCard({ product, match, selected, onSelect }: Prod
         <ConfidenceTag confidence={match.confidence} />
       </div>
 
+      {/* Physical description always renders, regardless of image status - never hidden when there's no photo. */}
+      <p className="font-mono text-[11px] leading-relaxed text-stone/70">{product.description}</p>
+
       <p className="text-sm leading-relaxed text-stone">{match.rationale}</p>
 
-      <div className="flex items-center justify-between border-t border-ink-line pt-3">
-        <span className="font-mono text-sm text-stone-light">
-          ₹{product.priceRangeINR[0].toLocaleString("en-IN")} – ₹{product.priceRangeINR[1].toLocaleString("en-IN")}
-          <span className="ml-1.5 text-[10px] uppercase tracking-wider text-stone/60">est.</span>
-        </span>
+      <div className="flex justify-end border-t border-ink-line pt-3">
         <button
           onClick={onSelect}
           className={`border px-3 py-1.5 font-mono text-xs uppercase tracking-wider transition-colors ${
@@ -47,7 +46,7 @@ export default function ProductCard({ product, match, selected, onSelect }: Prod
               : "border-ink-line text-stone-light hover:border-brass hover:text-brass"
           }`}
         >
-          {selected ? "Selected" : "Select"}
+          {selected ? "Added" : "Add to Quotation"}
         </button>
       </div>
     </div>
